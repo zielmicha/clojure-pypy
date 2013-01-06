@@ -1,10 +1,16 @@
 PYPY_PATH=$(HOME)/pypy
 HOST_PYTHON=pypy
-TRANSLATE_OPT=--view -O0
+TRANSLATE_OPT=-O0
 
-all: clojure-c
+all: test-c
 
-clojure-c: clojure.py
+test: clojure.py
+	$(HOST_PYTHON) clojure.py
+
+clojure-c: test clojure.py
 	$(HOST_PYTHON) $(PYPY_PATH)/pypy/translator/goal/translate.py $(TRANSLATE_OPT) clojure.py
 
-.PHONY: clojure-c
+test-c: clojure-c
+	./clojure-c
+
+.PHONY: clojure-c run
