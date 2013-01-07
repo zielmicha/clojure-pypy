@@ -29,7 +29,11 @@ class Root(object):
         return self is other
 
     def hash(self):
-        return id(self)
+        #raise NotImplementedError
+        return -1
 
     def __repr__(self):
-        return 'Root[%s]' % self.repr()
+        if self.repr() != Root.repr(self):
+            return 'Root[%s]' % self.repr()
+        else:
+            return object.__repr__(self)

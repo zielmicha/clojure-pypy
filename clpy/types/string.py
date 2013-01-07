@@ -8,7 +8,10 @@ class String(Root):
         return '"%s"' % self.value
 
     def hash(self):
-        return 12 # TODO: real hash
+        h = 12
+        for ch in self.value:
+            h += 17 * ord(ch)
+        return h
 
     def eq(self, other):
         if isinstance(other, String):
