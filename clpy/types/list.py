@@ -1,6 +1,9 @@
 from clpy.types.root import Root
 
 class List(Root):
+    '''
+    Immutable list. Or rather cons cell.
+    '''
     def __init__(self, head, tail):
         self.head = head
         self.tail = tail

@@ -3,8 +3,8 @@
 import clpy.tests
 
 def entry_point(argv):
-    print 'Hello from RPython!'
     clpy.tests.run()
+    print 'Hello from RPython! If you are seeing this, all tests passed!'
     return 0
 
 def target(*args):

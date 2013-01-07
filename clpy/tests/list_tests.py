@@ -21,3 +21,4 @@ def test_repr():
     b = Foobar()
     l = List(a, List(b, nil))
     assert l.repr() == 'List(an foobar object an foobar object)'
+    assert nil.repr() == 'List()'
