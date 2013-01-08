@@ -8,9 +8,10 @@ class String(Root):
         return '"%s"' % self.value
 
     def hash(self):
-        h = 12
+        h = 0
         for ch in self.value:
-            h += 17 * ord(ch)
+            h *= 17
+            h += ord(ch)
         return h
 
     def eq(self, other):
