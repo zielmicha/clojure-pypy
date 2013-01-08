@@ -1,4 +1,5 @@
-modules = ['list_tests', 'mutabledict_tests', 'string_tests', 'dict_tests']
+modules = ['list_tests', 'mutabledict_tests', 'string_tests', 'dict_tests',
+           'vector_tests']
 
 exec 'def run():\n\t' + '\n\t'.join(
     'print "\\trunning %s"; run_%s()' % (module, module) for module in modules )
