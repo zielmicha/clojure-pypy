@@ -33,7 +33,7 @@ def test_hashtrie_like_mutable():
 def test_hashtrie_like_mutable_with_many():
     space = Space()
     t = PersistentHashTrie(space)
-    items = [ String("foo%d" % i) for i in xrange(2000) ]
+    items = [ String("foo%d" % i) for i in xrange(200) ]
     for item in items:
         t._set_item(item, item)
 
@@ -74,7 +74,7 @@ def test_persistent_hashtrie():
 def test_persistent_hashtrie_with_many():
     space = Space()
     t = PersistentHashTrie(space)
-    items = [ String("foo%d" % i) for i in xrange(2000) ]
+    items = [ String("foo%d" % i) for i in xrange(200) ]
     for item in items:
         t = t.assoc(item, item)
 
