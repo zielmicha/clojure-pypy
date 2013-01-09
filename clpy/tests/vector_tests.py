@@ -1,4 +1,5 @@
 from clpy.types.string import String
+from clpy.types.number import make_int
 from clpy.types.vector import PersistentVector, make_vector
 from clpy.space import Space
 
@@ -10,6 +11,8 @@ def test_vector():
     assert v1.size() == 1
     assert space.eq( v1.to_list()[0], String('abc') )
     assert len(v1.to_list()) == 1
+    assert space.eq( v1.get_at(0), String('abc') )
+    assert space.eq( v1.get_item(make_int(0)), String('abc') )
 
 def test_many_append():
     space = Space()

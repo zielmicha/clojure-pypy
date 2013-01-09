@@ -29,8 +29,13 @@ class Root(object):
         return self is other
 
     def hash(self):
-        #raise NotImplementedError
-        return -1
+        raise NotImplementedError
+
+    def to_int(self):
+        raise NotImplementedError
+
+    def assoc(self, key, val):
+        raise NotImplementedError
 
     def __repr__(self):
         if self.repr() != Root.repr(self):
@@ -39,4 +44,8 @@ class Root(object):
             return object.__repr__(self)
 
 class Sequence(Root):
-    pass
+    def get_item(self, key):
+        return self.get_at(key.to_int())
+
+    def assoc(self, key, val):
+        return self.assoc(key.to_int(), val)
