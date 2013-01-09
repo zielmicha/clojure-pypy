@@ -1,5 +1,5 @@
 '''
-Root - Parent class for all user objects.
+Parent class for all user objects and some helper interfaces.
 '''
 
 class Root(object):
@@ -37,3 +37,6 @@ class Root(object):
             return 'Root[%s]' % self.repr()
         else:
             return object.__repr__(self)
+
+class Sequence(Root):
+    pass

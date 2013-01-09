@@ -1,5 +1,5 @@
 from clpy.types.string import String
-from clpy.types.vector import PersistentVector
+from clpy.types.vector import PersistentVector, make_vector
 from clpy.space import Space
 
 def test_vector():
@@ -23,3 +23,11 @@ def test_many_append():
     l = v.to_list()
     for i in xrange(count):
         assert space.eq( l[i], String('%d' % i) )
+
+def test_assoc():
+    space = Space()
+    v = make_vector([ String(i) for i in ["a", "b", "c"] ])
+    a = v.assoc_at(1, String("fuu"))
+    assert a.size() == 3 and space.eq( a.get_at(0), String('a') )
+    assert space.eq( a.get_at(1), String('fuu') )
+    assert space.eq( a.get_at(2), String('c') )

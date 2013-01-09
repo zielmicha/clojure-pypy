@@ -1,6 +1,12 @@
-from clpy.types.root import Root
+from clpy.types.root import Sequence
 
-class PersistentVector(Root):
+def make_vector(l):
+    v = PersistentVector()
+    for item in l:
+        v = v.with_appended(item)
+    return v
+
+class PersistentVector(Sequence):
     '''
     Persistent vector implementation.
     Based on binary trie with constant depth.
@@ -15,9 +21,29 @@ class PersistentVector(Root):
     def get_at(self, i):
         capacity = 1 << self._depth
         index = self._empty_front + i
+        if i < 0:
+            raise IndexError("list index less than 0")
         if index >= capacity - self._empty_back:
             raise IndexError("list index out of range")
         return self._trie_find(index)
+
+    def assoc_at(self, i, val):
+        capacity = 1 << self._depth
+        index = self._empty_front + i
+
+        if i < 0:
+            raise IndexError("list index less than 0")
+        if index >= capacity - self._empty_back:
+            raise IndexError("list index out of range")
+
+        root, entry = self._trie_find_or_create_copying(index)
+        entry.value = val
+        new = PersistentVector()
+        new._root = root
+        new._depth = self._depth
+        new._empty_front = self._empty_front
+        new._empty_back = self._empty_back
+        return new
 
     def with_appended(self, val):
         capacity = 1 << self._depth
