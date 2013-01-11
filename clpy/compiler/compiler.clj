@@ -24,9 +24,9 @@
 
 (defn translate-expanded [expr]
   (cond
-   (and (list? expr) (contains? special-form-translators (first expr)))
+   (and (seq? expr) (contains? special-form-translators (first expr)))
      (apply (fetch special-form-translators (first expr)) (rest expr))
-   (list? expr)
+   (seq? expr)
      (translate-function-call expr)
    (symbol? expr)
      (translate-symbol expr)
@@ -44,38 +44,44 @@
 (defn translate-symbol [expr]
   `((get-var ~expr)))
 
+(def ^:dynamic *last-loop*)
+
 (def special-form-translators
   {'def (fn [expr ])
    'if (fn [cond if-true & if-false]
-         (let [end-label (make-label) else-label (make-label)]
+         (let [end-label (make-label :end) else-label (make-label :else)]
            `(~@(translate cond)
-             (jumpifnot else-label)
+             (jump-if-not ~else-label)
              ~@(translate if-true)
-             (jump end-label)
-             (label else-label)
-             ~@(translate `(do ~@if-false))
-             (label end-label))))
+             (jump ~end-label)
+             (label ~else-label)
+             ~@(apply concat (map translate if-false))
+             (label ~end-label))))
    'do (fn [& args]
          args)
    'let* (fn [bindings & exprs]
-           (apply concat
-                  (map (partition 2 bindings)
-                       (fn [[name value]]
-                         `(~@(translate value)
-                           (set-local ~name))))))
+           `(~@(apply concat
+                    (map (fn [[name value]]
+                           `(~@(translate value)
+                             (set-local ~name))) (partition 2 bindings)))
+             ~@(apply concat (map translate exprs))))
    'quote (fn [expr]
             `((const ~expr)))
-   'var nil
+   'var (fn [name]
+            `((get-var-object name)))
    'fn* nil
-   'loop nil
+   'loop* (fn [& args]
+            (binding [*last-loop* (make-label :loop)]
+              `((label ~*last-loop*)
+                ~@(translate (concat '(let) args)))))
    'recur nil
    'throw nil
    'try nil})
 
 (def label-max-id (atom 0))
 
-(defn make-label []
-  {::label (swap! label-max-id inc)})
+(defn make-label [name]
+  [name (swap! label-max-id inc)])
 
 (defn print-ir [l]
   (doseq [item l]
