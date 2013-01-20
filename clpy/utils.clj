@@ -5,6 +5,11 @@
     (if val val
         (throw (Exception. (format "%s not found in %s" key coll))))))
 
+(defn fetch-in [coll ks]
+  (if (seq ks)
+    (fetch-in (fetch coll (first ks)) (rest ks))
+    coll))
+
 (defn get-symbol-name [sym]
   ; todo
   (let [s (str sym)]
