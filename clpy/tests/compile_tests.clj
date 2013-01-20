@@ -8,4 +8,7 @@
     (print-ir (translate '(if a (foo (if d e)) c))))
 
 (binding [*file-name* "compile-tests.clj"]
-    (print-ir (translate '(let [a b] c))))
+    (print-ir (translate '(let [a b] c)))
+    (print-ir (translate '(loop [a b] c)))
+    (print-ir (translate '(loop [a b]
+                            (recur 1)))))

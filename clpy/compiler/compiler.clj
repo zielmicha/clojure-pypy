@@ -8,6 +8,7 @@
          translate-function-call
          translate-const
          translate-symbol
+         translate-let-basic
          make-label
          print-ir
          decorate-with-linum)
@@ -42,9 +43,10 @@
   `((const ~expr)))
 
 (defn translate-symbol [expr]
-  `((get-var ~expr)))
+  `((get ~expr)))
 
 (def ^:dynamic *last-loop*)
+(def ^:dynamic *last-loop-var-names*)
 
 (def special-form-translators
   {'def (fn [expr ])
@@ -60,23 +62,37 @@
    'do (fn [& args]
          args)
    'let* (fn [bindings & exprs]
-           `(~@(apply concat
-                    (map (fn [[name value]]
-                           `(~@(translate value)
-                             (set-local ~name))) (partition 2 bindings)))
-             ~@(apply concat (map translate exprs))))
+           (translate-let-basic bindings exprs nil))
    'quote (fn [expr]
             `((const ~expr)))
    'var (fn [name]
             `((get-var-object name)))
    'fn* nil
-   'loop* (fn [& args]
-            (binding [*last-loop* (make-label :loop)]
-              `((label ~*last-loop*)
-                ~@(translate (concat '(let) args)))))
-   'recur nil
-   'throw nil
+   'loop* (fn [bindings & exprs]
+            (binding [*last-loop* (make-label :loop)
+                      *last-loop-var-names* (map second (partition 2 bindings))]
+              (translate-let-basic bindings exprs `((label ~*last-loop*)))))
+   'recur (fn [& args]
+            (when-not *last-loop* (throw (Exception. "recur outside of loop")))
+            (when-not (= (count args) (count *last-loop-var-names*))
+              (throw (Exception. "invalid number of arguments to recur")))
+            `(~@(apply concat
+                       (map (fn [name val]
+                              `(~@(translate val)
+                                (set-local ~name)))
+                            *last-loop-var-names* args))
+              (jump ~*last-loop*)))
    'try nil})
+
+(defn translate-let-basic [bindings exprs additional]
+  `(~@(apply concat
+             (map (fn [[name value]]
+                    `(~@(translate value)
+                      (push-local ~name))) (partition 2 bindings)))
+    ~@additional
+    ~@(apply concat (map translate exprs))
+    ~@(map (fn [[name value]]
+             `(pop-local ~name)) (partition 2 bindings))))
 
 (def label-max-id (atom 0))
 
