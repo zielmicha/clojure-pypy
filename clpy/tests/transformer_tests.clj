@@ -11,5 +11,8 @@
 (print-graph (translate-and-graph '(if a b c)))
 (print-graph (translate-and-graph '(loop [a 1]
                                      (recur 2))))
-(print-graph (translate-and-graph '(loop [a 1]
-                                     (recur (inc a)))))
+(def a (translate-and-graph
+        '(loop [a 1]
+           (recur (inc a)))))
+(print-graph a)
+(print-graph (eliminate-nops a))

@@ -52,6 +52,23 @@
 (defn get-value [vertex]
   (get (:values vertex) (:id vertex)))
 
+(defn update-edges [vertex fun]
+  (loop [vertex vertex, keys (get-edge-keys vertex)]
+    (if (seq keys)
+      (let [key (first keys), edge-to (get-edge vertex key)]
+        (recur (with-edge vertex (fun edge-to) key) (rest keys)))
+      vertex)))
+
+(defn walk [vertex fun & {:keys [skip] :or {skip #{}}}]
+  {:pre [(= (class vertex) Vertex)]
+   :post [(= (class %) Vertex)]}
+  (if (contains? skip (:id vertex))
+    vertex
+    (let [new-skip (conj skip (:id vertex))]
+      (update-edges vertex
+                    (fn [item]
+                      (fun (walk item fun :skip new-skip)))))))
+
 (defn print-graph [vertex & {:keys [indent refs] :or {indent "" refs #{}}}]
   (if (contains? refs (:id vertex))
     (println indent "-> ref" (:id vertex))

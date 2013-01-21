@@ -94,10 +94,10 @@
     ~@(map (fn [[name value]]
              `(pop-local ~name)) (partition 2 bindings))))
 
-(def label-max-id (atom 0))
+(def ^:dynamic *label-max-id* (atom 0))
 
 (defn make-label [name]
-  [name (swap! label-max-id inc)])
+  [name (swap! *label-max-id* inc)])
 
 (defn print-ir [l]
   (doseq [item l]

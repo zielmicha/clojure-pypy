@@ -36,3 +36,10 @@
   (hash-map-from-items
     (map #(let [name (second %)] [name (graph/vertex `(nop ~name))])
          (filter #(= (first %) `label) xs))))
+
+(defn eliminate-nops [vertex]
+  (graph/walk vertex (fn [v]
+                       (let [value (graph/get-value v)]
+                         (if (= (first value) `nop)
+                           (graph/get-edge v :next)
+                           v)))))
