@@ -1,5 +1,6 @@
-; immutable, but not functional data structure representing
-; graph with cycles
+; Immutable, but not functional data structure representing
+; graph with cycles.
+; Current implementation has pathetic comlexity guarantees.
 (ns clpy.graph
   (:use clpy.utils))
 
@@ -11,18 +12,28 @@
          with-edge
          get-edge-from
          get-edge
-         get-value)
+         get-value
+         merge-edges)
 
 (defn vertex [value]
   (let [id (swap! *next-id* inc)]
     (Vertex. id {} {id value})))
 
-(defn with-edge [vertex from to value]
+(defn with-edge [vertex to value]
   (->
-   vertex
-   (assoc-in [:edges (:id from) value] (:id to))
-   (assoc-in [:values (:id from)] (get-value from))
-   (assoc-in [:values (:id to)] (get-value to))))
+   (merge-edges vertex to)
+   (assoc-in [:edges (:id vertex) value] (:id to))))
+
+(defn merge-edges [vertex with]
+  (assoc vertex
+    :edges (merge (:edges vertex) (:edges with)) ; todo: this should detect collisions
+    :values (merge (:values vertex) (:values with))))
+
+(defn with-edges [vertex hashmap]
+  (if (seq hashmap)
+    (let [[k v] (first hashmap)]
+      (recur (with-edge vertex v k) (rest hashmap)))
+    vertex))
 
 (defn get-edge-from [vertex from value]
   (Vertex. (fetch-in vertex [:edges (:id from) value])
@@ -32,5 +43,25 @@
 (defn get-edge [vertex value]
   (get-edge-from vertex vertex value))
 
+(defn get-edge-keys-from [vertex from]
+  (keys (get-in vertex [:edges (:id from)])))
+
+(defn get-edge-keys [vertex]
+  (get-edge-keys-from vertex vertex))
+
 (defn get-value [vertex]
   (get (:values vertex) (:id vertex)))
+
+(defn print-graph [vertex & {:keys [indent refs] :or {indent "" refs #{}}}]
+  (if (contains? refs (:id vertex))
+    (println indent "-> ref" (:id vertex))
+    (do
+      (println indent "node" (get-value vertex) "; id" (:id vertex))
+      (let [keys (get-edge-keys vertex)
+            refs (conj refs (:id vertex))]
+        (if (= (count keys) 1)
+          (print-graph (get-edge vertex (first keys)) :indent indent :refs refs)
+          (let [new-indent (str indent "   ")]
+            (doseq [key keys]
+              (println indent "  key:" key)
+              (print-graph (get-edge vertex key) :indent new-indent :refs refs))))))))

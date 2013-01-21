@@ -1,7 +1,8 @@
 ; transforms Clojure sexpr into IR
 ; see clpy/compiler/__init__.py for overview
 (ns clpy.compiler.compiler
-  (:use clpy.utils))
+  (:use clpy.utils)
+  (:use clpy.compiler.syms))
 
 (declare read-from-string
          translate translate-expanded
@@ -36,14 +37,14 @@
 
 (defn translate-function-call [[name & args]]
   `(~@(translate name)
-    ~@(apply concat (map translate args))
+    ~@(mapcat translate args)
     (call ~(count args))))
 
 (defn translate-const [expr]
   `((const ~expr)))
 
 (defn translate-symbol [expr]
-  `((get ~expr)))
+  `((get-var ~expr)))
 
 (def ^:dynamic *last-loop*)
 (def ^:dynamic *last-loop-var-names*)
@@ -53,11 +54,12 @@
    'if (fn [cond if-true & if-false]
          (let [end-label (make-label :end) else-label (make-label :else)]
            `(~@(translate cond)
-             (jump-if-not ~else-label)
+             (negate)
+             (jump-if ~else-label)
              ~@(translate if-true)
              (jump ~end-label)
              (label ~else-label)
-             ~@(apply concat (map translate if-false))
+             ~@(mapcat translate if-false)
              (label ~end-label))))
    'do (fn [& args]
          args)
@@ -70,27 +72,25 @@
    'fn* nil
    'loop* (fn [bindings & exprs]
             (binding [*last-loop* (make-label :loop)
-                      *last-loop-var-names* (map second (partition 2 bindings))]
+                      *last-loop-var-names* (map first (partition 2 bindings))]
               (translate-let-basic bindings exprs `((label ~*last-loop*)))))
    'recur (fn [& args]
             (when-not *last-loop* (throw (Exception. "recur outside of loop")))
             (when-not (= (count args) (count *last-loop-var-names*))
               (throw (Exception. "invalid number of arguments to recur")))
-            `(~@(apply concat
-                       (map (fn [name val]
+            `(~@(mapcat (fn [name val]
                               `(~@(translate val)
                                 (set-local ~name)))
-                            *last-loop-var-names* args))
+                            *last-loop-var-names* args)
               (jump ~*last-loop*)))
    'try nil})
 
 (defn translate-let-basic [bindings exprs additional]
-  `(~@(apply concat
-             (map (fn [[name value]]
-                    `(~@(translate value)
-                      (push-local ~name))) (partition 2 bindings)))
+  `(~@(mapcat (fn [[name value]]
+                `(~@(translate value)
+                  (push-local ~name))) (partition 2 bindings))
     ~@additional
-    ~@(apply concat (map translate exprs))
+    ~@(mapcat translate exprs)
     ~@(map (fn [[name value]]
              `(pop-local ~name)) (partition 2 bindings))))
 

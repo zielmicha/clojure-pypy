@@ -16,3 +16,7 @@
     (if (== (.indexOf s "/") -1)
       s
       (nth (.split s "/") 1))))
+
+(defn hash-map-from-items [pairs]
+  {:pre (every? #(= (count %) 2) pairs)}
+  (apply hash-map (mapcat identity pairs)))
