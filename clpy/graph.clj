@@ -59,7 +59,8 @@
         (recur (with-edge vertex (fun edge-to) key) (rest keys)))
       vertex)))
 
-(defn walk [vertex fun & {:keys [skip] :or {skip #{}}}]
+(defn walk-with-state [state vertex fun & {:keys [skip] :or {skip #{}}}]
+  ; DFS
   {:pre [(= (class vertex) Vertex)]
    :post [(= (class %) Vertex)]}
   (if (contains? skip (:id vertex))
@@ -67,7 +68,12 @@
     (let [new-skip (conj skip (:id vertex))]
       (update-edges vertex
                     (fn [item]
-                      (fun (walk item fun :skip new-skip)))))))
+                      (let [[new-state new-item] (fun state item)]
+                       (walk-with-state new-state new-item fun :skip new-skip) ))))))
+
+(defn walk [vertex fun]
+  (walk-with-state nil vertex (fn [state vertex]
+                                [state (fun vertex)])))
 
 (defn print-graph [vertex & {:keys [indent refs] :or {indent "" refs #{}}}]
   (if (contains? refs (:id vertex))
