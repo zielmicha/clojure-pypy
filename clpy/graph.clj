@@ -35,6 +35,9 @@
       (recur (with-edge vertex v k) (rest hashmap)))
     vertex))
 
+(defn with-value [vertex new-value]
+  (assoc-in vertex [:values (:id vertex)] new-value))
+
 (defn get-edge-from [vertex from value]
   (Vertex. (fetch-in vertex [:edges (:id from) value])
            (:edges vertex)
@@ -69,7 +72,9 @@
       (update-edges vertex
                     (fn [item]
                       (let [[new-state new-item] (fun state item)]
-                       (walk-with-state new-state new-item fun :skip new-skip) ))))))
+                        (assert (= (class new-item) Vertex)
+                                "Walker didn't return Vertex.")
+                        (walk-with-state new-state new-item fun :skip new-skip) ))))))
 
 (defn walk [vertex fun]
   (walk-with-state nil vertex (fn [state vertex]

@@ -9,7 +9,10 @@
          graph-from-ir-and-labels
          get-labels-in-code)
 
-(defn graph-from-ir [xs]
+(defn graph-from-ir
+  "Create a graph from list-based IR.
+  Returns Vertex from clpy.graph."
+  [xs]
   (let [labels (get-labels-in-code xs)]
     (graph-from-ir-and-labels labels xs)))
 
@@ -32,14 +35,93 @@
       (graph/with-edges vertex edges))
     (graph/vertex `(end))))
 
-(defn get-labels-in-code [xs]
+(defn get-labels-in-code
+  "Scans IR searching for labels
+  Returns mapping from label names to Vertices."
+  [xs]
   (hash-map-from-items
     (map #(let [name (second %)] [name (graph/vertex `(nop ~name))])
          (filter #(= (first %) `label) xs))))
 
 (defn eliminate-nops [vertex]
+  "Removes nops from graph."
   (graph/walk vertex (fn [v]
                        (let [value (graph/get-value v)]
                          (if (= (first value) `nop)
                            (graph/get-edge v :next)
                            v)))))
+
+(defrecord Variable [register value-known value])
+(defrecord State [variables max-reg stack])
+
+(declare stack-to-register
+         std-instruction
+         std-instruction-c)
+
+(defn std-instruction
+  "Instruction that only pushes and pops from stack.
+  Takes function that should return map with keys
+  :in and :out with number of registers."
+  [func]
+  (fn [state name value]
+    (let [{:keys [in-count out-count]} (func value)
+          stack (:stack state)
+          [in-reg stack] (pop-n stack in-count)
+          state (assoc state :stack state)
+
+          out-reg (range (:max-reg state) (+ out-count (:max-reg state)))
+          state (update state :max-reg (partial + out-count))
+          stack (concat stack out-reg)]
+      [state
+       (name {:value value :in in-reg :out out-reg})])))
+
+(defn std-instruction-c
+  "Shorthand for std-instruction with constant function as argument."
+  [& {:keys [in out]}]
+  (std-instruction (fn [value] {:in-count in :out-count out})))
+
+(def ^{:doc "Mapping holding functions for processing stack-based
+  instructions into register-based.
+
+  They should take arguments [state name value] and return tuple
+  [new-state (new-name new-value)]"}
+  instructions
+  {`push-local
+   (fn [state name value]
+     [(let [var-reg (inc (:max-reg state))
+            inreg (first (:stack state))]
+        (->
+         state
+         (update-in [:variables value]  #(conj % var-reg))
+         (update :stack rest)
+         (assoc :max-reg var-reg)))
+      `(copy {:in [inreg] :out [var-reg]})])
+   `pop-local
+   (fn [state name value]
+     [(update-in state [:variables value] rest)
+      `(nop)])
+   `call
+   (std-instruction (fn [value]
+                      {:in-count (inc value) :out-count 1}))
+   `jump-if (std-instruction-c :in 0 :out 0)
+   `nop (std-instruction-c :in 0 :out 0)
+   `set-local (std-instruction-c :in 1 :out 0)
+   `get-var (std-instruction-c :in 0 :out 1)
+   `negate (std-instruction-c :in 1 :out 1)
+   `end (std-instruction-c :in 1 :out 0)})
+
+(defn stack-to-register-step [state vertex]
+   (let [item (graph/get-value vertex)
+         name (first item)
+         value (second item)]
+     (assert item (format "item is %s" item))
+     (let [[new-state new-item]
+           ((fetch instructions name) state name value)]
+       (assert new-item (format "fn for %s returned %s" name new-item))
+       [new-state (graph/with-value vertex new-item)])))
+
+(defn stack-to-register [vertex]
+  (graph/walk-with-state
+    {:variables {}, :max-reg 0, :stack nil}
+    vertex
+    stack-to-register-step))

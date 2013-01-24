@@ -16,3 +16,7 @@
            (recur (inc a)))))
 (print-graph a)
 (print-graph (eliminate-nops a))
+
+(def h (eliminate-nops a))
+
+(def done (stack-to-register h))
