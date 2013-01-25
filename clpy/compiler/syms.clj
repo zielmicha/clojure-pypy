@@ -3,6 +3,7 @@
 (declare get-var
          get-global
          const
+         func
          copy
          call
          get-var-object

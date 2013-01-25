@@ -68,8 +68,16 @@
    'quote (fn [expr]
             `((const ~expr)))
    'var (fn [name]
-            `((get-var-object name)))
-   'fn* nil
+          `((get-var-object name)))
+   'fn* (fn [& things]
+          (defn parse-one-body [things]
+              {:args (first things), :exprs (rest things)})
+
+          (let [[things name] (if (symbol? (first things))
+                                [(rest things) (first things)]
+                                [things nil])
+                bodies (map parse-one-body things)]
+            `((func ~name ~bodies))))
    'loop* (fn [bindings & exprs]
             (binding [*last-loop* (make-label :loop)
                       *last-loop-var-names* (map first (partition 2 bindings))]

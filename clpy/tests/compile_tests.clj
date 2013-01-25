@@ -12,3 +12,10 @@
     (print-ir (translate '(loop [a b] c)))
     (print-ir (translate '(loop [a b]
                             (recur 1)))))
+
+(binding [*file-name* "compile-tests.clj"]
+    (print-ir (translate '(fn [a b]
+                            foo)))
+    (print-ir (translate '(fn
+                            ([a b] foo)
+                            ([a] bar)))))
