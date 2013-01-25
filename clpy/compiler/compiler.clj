@@ -10,6 +10,7 @@
          translate-const
          translate-symbol
          translate-let-basic
+         add-with-meta
          make-label
          print-ir
          decorate-with-linum)
@@ -22,7 +23,12 @@
   (translate (read-from-string src)))
 
 (defn translate [expr]
-  (decorate-with-linum (translate-expanded (macroexpand expr)) expr))
+  (-> expr
+      (macroexpand)
+      (translate-expanded)
+      ; I don't yet understand where meta should be added
+      ;(add-with-meta expr)
+      (decorate-with-linum expr)))
 
 (defn translate-expanded [expr]
   (cond
@@ -47,7 +53,15 @@
   `((get-var ~expr)))
 
 (def ^:dynamic *last-loop*)
+(def ^:dynamic *last-loop-finallies* nil)
 (def ^:dynamic *last-loop-var-names*)
+
+(defn with-finally [codefn finally]
+  (binding
+      [*last-loop-finallies* (concat *last-loop-finallies* finally)]
+    (concat
+     (codefn)
+     finally)))
 
 (def special-form-translators
   {'def (fn [expr ])
@@ -77,7 +91,8 @@
                                 [(rest things) (first things)]
                                 [things nil])
                 bodies (map parse-one-body things)]
-            `((func ~name ~bodies))))
+            `((func {:name ~name :bodies ~bodies}))))
+
    'loop* (fn [bindings & exprs]
             (binding [*last-loop* (make-label :loop)
                       *last-loop-var-names* (map first (partition 2 bindings))]
@@ -86,21 +101,31 @@
             (when-not *last-loop* (throw (Exception. "recur outside of loop")))
             (when-not (= (count args) (count *last-loop-var-names*))
               (throw (Exception. "invalid number of arguments to recur")))
-            `(~@(mapcat (fn [name val]
+            `(~@*last-loop-finallies*
+              ~@(mapcat (fn [name val]
                               `(~@(translate val)
-                                (set-local ~name)))
+                                (push-local ~name)))
                             *last-loop-var-names* args)
               (jump ~*last-loop*)))
    'try nil})
 
 (defn translate-let-basic [bindings exprs additional]
-  `(~@(mapcat (fn [[name value]]
-                `(~@(translate value)
-                  (push-local ~name))) (partition 2 bindings))
-    ~@additional
-    ~@(mapcat translate exprs)
-    ~@(map (fn [[name value]]
+  (with-finally
+    (fn [] `(~@(mapcat (fn [[name value]]
+                         `(~@(translate value)
+                           (push-local ~name))) (partition 2 bindings))
+             ~@additional
+             ~@(mapcat translate exprs)
+             ))
+    (map (fn [[name value]]
              `(pop-local ~name)) (partition 2 bindings))))
+
+(defn add-with-meta [instr src]
+  (if (meta src)
+    `(~@instr
+      (const ~(meta src))
+      (with-meta))
+    instr))
 
 (def ^:dynamic *label-max-id* (atom 0))
 
