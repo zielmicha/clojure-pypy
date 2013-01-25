@@ -1,4 +1,4 @@
-; transforms IR into bytecode
+; transforms stack-based IR into register-based IR
 ; see clpy/compiler/__init__.py for overview
 (ns clpy.compiler.transformer
   (:use clpy.utils)
@@ -116,7 +116,7 @@
 
    `get-var
    (fn [state name value]
-     (if (contains? (:variables state) value)
+     (if (get (:variables state) value)
        (let [out-reg (inc (:max-reg state))
              in-reg (fetch-first (get-in state [:variables value]))]
              [(->
@@ -133,8 +133,10 @@
    `const (std-instruction-c :in 0 :out 1)
    `jump-if (std-instruction-c :in 0 :out 0)
    `nop (std-instruction-c :in 0 :out 0)
-   `set-local (std-instruction-c :in 1 :out 0)
    `negate (std-instruction-c :in 1 :out 1)
+   `discard (std-instruction-c :in 1 :out 0)
+   `get-global (std-instruction-c :in 0 :out 1)
+   `func (std-instruction-c :in 0 :out 1)
    `end (std-instruction-c :in 1 :out 0)})
 
 (defn stack-to-register-step [state vertex]
@@ -142,6 +144,7 @@
          name (first item)
          value (second item)]
      (assert item (format "item is %s" item))
+;     (println name value state)
      (let [[new-state new-item]
            ((fetch instructions name) state name value)]
        (assert new-item (format "fn for %s returned %s" name new-item))

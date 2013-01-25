@@ -1,5 +1,6 @@
 (ns clpy.tests.compiler-tests
-  (:use clpy.compiler.compiler))
+  (:use clpy.compiler.compiler)
+  (:refer-clojure :exclude [test]))
 
 (defn test [expr]
   (println)
@@ -10,20 +11,22 @@
     (test '(foobar eghr))
     (test '(if a b c))
     (test '(if a b))
-    (test '(if a (foo (if d e)) c)))
+    (test '(if a (foo (if d e)) c))
 
-(binding [*file-name* "compile-tests.clj"]
+
     (test '(let [a b] c))
     (test '(loop [a b] c))
     (test '(loop [a b]
              (let [c 1]
                (recur 5))))
     (test '(loop [a b]
-             (recur 1))))
+             (recur 1)))
 
-(binding [*file-name* "compile-tests.clj"]
+
     (test '(fn [a b]
              foo))
     (test '(fn
              ([a b] foo)
-             ([a] bar))))
+             ([a] bar)))
+
+    (test '(do a b c)))

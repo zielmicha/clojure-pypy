@@ -2,23 +2,27 @@
   (:use clpy.compiler.compiler)
   (:use clpy.compiler.transformer)
   (:use clpy.compiler.syms)
-  (:use clpy.graph))
+  (:use clpy.graph)
+  (:refer-clojure :exclude [test]))
 
 (defn translate-and-graph [sexpr]
   (graph-from-ir (translate sexpr)))
 
+(defn test [code]
+  (->
+   code
+   (translate)
+   (graph-from-ir)
+   (eliminate-nops)
+   (print-graph))
+  (->
+   code
+   (translate)
+   (graph-from-ir)
+   (eliminate-nops)
+   (stack-to-register)
+   (print-graph)))
 
-(print-graph (translate-and-graph '(if a b c)))
-(print-graph (translate-and-graph '(loop [a 1]
-                                     (recur 2))))
-(def a (translate-and-graph
-        '(loop [a 1]
-           (recur (inc a)))))
-(print-graph a)
-(print-graph (eliminate-nops a))
-
-(def h (eliminate-nops a))
-
-(def done (stack-to-register h))
-
-(print-graph done)
+(test
+ '(loop [a 1]
+    (recur (inc a))))

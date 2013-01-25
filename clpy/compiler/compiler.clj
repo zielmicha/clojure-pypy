@@ -76,7 +76,7 @@
              ~@(mapcat translate if-false)
              (label ~end-label))))
    'do (fn [& args]
-         args)
+         (drop-last 1 (mapcat #(concat (translate %) `((discard))) args)))
    'let* (fn [bindings & exprs]
            (translate-let-basic bindings exprs nil))
    'quote (fn [expr]
@@ -101,11 +101,11 @@
             (when-not *last-loop* (throw (Exception. "recur outside of loop")))
             (when-not (= (count args) (count *last-loop-var-names*))
               (throw (Exception. "invalid number of arguments to recur")))
-            `(~@*last-loop-finallies*
-              ~@(mapcat (fn [name val]
+            `(~@(mapcat (fn [name val]
                               `(~@(translate val)
                                 (push-local ~name)))
                             *last-loop-var-names* args)
+              ~@*last-loop-finallies*
               (jump ~*last-loop*)))
    'try nil})
 
