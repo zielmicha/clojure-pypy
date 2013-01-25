@@ -10,6 +10,11 @@
     (fetch-in (fetch coll (first ks)) (rest ks))
     coll))
 
+(defn fetch-first [coll]
+  (if (seq coll)
+    (first coll)
+    (throw (Exception. "(fetch-first nil)"))))
+
 ; update-in exists, so why not update?
 (defn update [coll k func]
   (update-in coll [k] func))

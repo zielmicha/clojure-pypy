@@ -68,13 +68,13 @@
    :post [(= (class %) Vertex)]}
   (if (contains? skip (:id vertex))
     vertex
-    (let [new-skip (conj skip (:id vertex))]
-      (update-edges vertex
+    (let [[new-state new-vertex] (fun state vertex)
+          new-skip (conj skip (:id vertex))]
+      (assert (= (class new-vertex) Vertex)
+              "Walker didn't return Vertex.")
+      (update-edges new-vertex
                     (fn [item]
-                      (let [[new-state new-item] (fun state item)]
-                        (assert (= (class new-item) Vertex)
-                                "Walker didn't return Vertex.")
-                        (walk-with-state new-state new-item fun :skip new-skip) ))))))
+                      (walk-with-state new-state item fun :skip new-skip))))))
 
 (defn walk [vertex fun]
   (walk-with-state nil vertex (fn [state vertex]

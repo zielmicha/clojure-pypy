@@ -20,3 +20,5 @@
 (def h (eliminate-nops a))
 
 (def done (stack-to-register h))
+
+(print-graph done)

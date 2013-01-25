@@ -36,7 +36,7 @@
     (graph/vertex `(end))))
 
 (defn get-labels-in-code
-  "Scans IR searching for labels
+  "Scans IR searching for labels.
   Returns mapping from label names to Vertices."
   [xs]
   (hash-map-from-items
@@ -58,6 +58,13 @@
          std-instruction
          std-instruction-c)
 
+(defn instr
+  "Create register-based instruction object."
+  [name d]
+  {:pre [(every? (partial every? integer?)
+                 [(:in d) (:out d)])]}
+  (list name (hash-map-from-items (filter (fn [[k v]] (not= v [])) d))))
+
 (defn std-instruction
   "Instruction that only pushes and pops from stack.
   Takes function that should return map with keys
@@ -67,13 +74,17 @@
     (let [{:keys [in-count out-count]} (func value)
           stack (:stack state)
           [in-reg stack] (pop-n stack in-count)
-          state (assoc state :stack state)
 
-          out-reg (range (:max-reg state) (+ out-count (:max-reg state)))
+          out-reg (range (+ 1 (:max-reg state))
+                         (+ 1 out-count (:max-reg state)))
           state (update state :max-reg (partial + out-count))
-          stack (concat stack out-reg)]
+          stack (concat stack out-reg)
+
+          state (assoc state :stack stack)]
       [state
-       (name {:value value :in in-reg :out out-reg})])))
+       (instr name {:value value
+                    :in (apply vector in-reg)
+                    :out (apply vector out-reg)})])))
 
 (defn std-instruction-c
   "Shorthand for std-instruction with constant function as argument."
@@ -86,27 +97,43 @@
   They should take arguments [state name value] and return tuple
   [new-state (new-name new-value)]"}
   instructions
+
   {`push-local
    (fn [state name value]
-     [(let [var-reg (inc (:max-reg state))
-            inreg (first (:stack state))]
-        (->
+     (let [var-reg (inc (:max-reg state))
+           in-reg (fetch-first (:stack state))]
+       [(->
          state
          (update-in [:variables value]  #(conj % var-reg))
          (update :stack rest)
-         (assoc :max-reg var-reg)))
-      `(copy {:in [inreg] :out [var-reg]})])
+         (assoc :max-reg var-reg))
+        (instr `copy {:in [in-reg] :out [var-reg]})]))
+
    `pop-local
    (fn [state name value]
      [(update-in state [:variables value] rest)
-      `(nop)])
+      (instr `nop {})])
+
+   `get-var
+   (fn [state name value]
+     (if (contains? (:variables state) value)
+       (let [out-reg (inc (:max-reg state))
+             in-reg (fetch-first (get-in state [:variables value]))]
+             [(->
+               state
+               (update :stack #(conj % out-reg))
+               (assoc :max-reg out-reg))
+              (instr `copy {:in [in-reg] :out [out-reg]})])
+       ((std-instruction-c :in 0 :out 1) state `get-global value)))
+
    `call
    (std-instruction (fn [value]
                       {:in-count (inc value) :out-count 1}))
+
+   `const (std-instruction-c :in 0 :out 1)
    `jump-if (std-instruction-c :in 0 :out 0)
    `nop (std-instruction-c :in 0 :out 0)
    `set-local (std-instruction-c :in 1 :out 0)
-   `get-var (std-instruction-c :in 0 :out 1)
    `negate (std-instruction-c :in 1 :out 1)
    `end (std-instruction-c :in 1 :out 0)})
 
