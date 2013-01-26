@@ -1,5 +1,11 @@
 from clpy.types.root import Root
 
+def make_list(space, l):
+    v = nil
+    for item in l:
+        v = List(item, v)
+    return v
+
 class List(Root):
     '''
     Immutable list. Or rather cons cell.

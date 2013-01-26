@@ -6,6 +6,7 @@ clpy/types/__init__.py clpy/types/mutabledict.py clpy/types/string.py clpy/types
 clpy/types/list.py clpy/types/dict.py clpy/types/vector.py \
 \
 clpy/compiler.py clpy/space.py \
+clpy/serializer.py \
 \
 clpy/tests/list_tests.py clpy/tests/__init__.py clpy/tests/string_tests.py\
 clpy/tests/mutabledict_tests.py clpy/tests/dict_tests.py clpy/tests/vector_tests.py \

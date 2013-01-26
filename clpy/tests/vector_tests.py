@@ -29,7 +29,7 @@ def test_many_append():
 
 def test_assoc():
     space = Space()
-    v = make_vector([ String(i) for i in ["a", "b", "c"] ])
+    v = space.make_vector([ String(i) for i in ["a", "b", "c"] ])
     a = v.assoc_at(1, String("fuu"))
     assert a.size() == 3 and space.eq( a.get_at(0), String('a') )
     assert space.eq( a.get_at(1), String('fuu') )

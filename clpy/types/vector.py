@@ -1,6 +1,6 @@
 from clpy.types.root import Sequence
 
-def make_vector(l):
+def make_vector(space, l):
     v = PersistentVector()
     for item in l:
         v = v.with_appended(item)

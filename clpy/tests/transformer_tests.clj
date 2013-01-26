@@ -21,6 +21,7 @@
    (graph-from-ir)
    (eliminate-nops)
    (stack-to-register)
+   (eliminate-nops)
    (print-graph)))
 
 (test
