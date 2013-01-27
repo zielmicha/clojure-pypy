@@ -10,6 +10,7 @@ clpy/serializer.py \
 \
 clpy/tests/list_tests.py clpy/tests/__init__.py clpy/tests/string_tests.py\
 clpy/tests/mutabledict_tests.py clpy/tests/dict_tests.py clpy/tests/vector_tests.py \
+clpy/tests/serializer_tests.py \
 \
 clojure.py
 

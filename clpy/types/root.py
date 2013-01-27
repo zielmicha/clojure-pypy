@@ -26,7 +26,7 @@ class Root(object):
         raise NotImplementedError
 
     def eq(self, other):
-        raise self is other
+        return self is other
 
     def hash(self):
         raise NotImplementedError
