@@ -5,6 +5,15 @@ class Dict(Root):
     Base implementation of dictionary to be extended by concrete implementation.
     '''
 
+def make_dict_from_pairs(space, v):
+    raise NotImplementedError
+
+def make_dict(space, v):
+    m = PersistentHashTrie(space)
+    for key, value in v:
+        m = m.assoc(key, value)
+    return m
+
 class PersistentHashTrie(Dict):
     '''
     An implementation of persistent hash trie.

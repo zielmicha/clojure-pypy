@@ -26,7 +26,7 @@ class Root(object):
         raise NotImplementedError
 
     def eq(self, other):
-        return self is other
+        raise self is other
 
     def hash(self):
         raise NotImplementedError
@@ -48,4 +48,4 @@ class Sequence(Root):
         return self.get_at(key.to_int())
 
     def assoc(self, key, val):
-        return self.assoc(key.to_int(), val)
+        return self.assoc_at(key.to_int(), val)

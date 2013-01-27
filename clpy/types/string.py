@@ -1,5 +1,8 @@
 from clpy.types.root import Root
 
+def make_str(space, val):
+    return String(val)
+
 class String(Root):
     def __init__(self, value):
         self.value = value
