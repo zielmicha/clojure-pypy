@@ -20,7 +20,7 @@ test: clojure.py
 	PYTHONPATH=$(PYPY_PATH) $(HOST_PYTHON) clojure.py
 
 clojure-c: $(PY_FILES)
-	$(HOST_PYTHON) $(PYPY_PATH)/pypy/translator/goal/translate.py $(TRANSLATE_OPT) clojure.py
+	$(HOST_PYTHON) $(PYPY_PATH)/rpython/bin/rpython $(TRANSLATE_OPT) clojure.py
 
 test-c: test clojure-c
 	./clojure-c

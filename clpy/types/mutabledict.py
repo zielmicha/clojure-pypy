@@ -1,5 +1,3 @@
-from pypy.rlib.objectmodel import r_dict
-
 from clpy.types.root import Root
 from clpy.types.dict import PersistentHashTrie
 
