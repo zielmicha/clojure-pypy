@@ -1,6 +1,8 @@
 clojure-pypy
 ============
 
+**Development of this project was aborted, because it seems that strict functional languages are not good tool for writing compilers (especially manipulating cyclic graphs)**
+
 Clojure implementation on PyPy.
 
 Rationale
